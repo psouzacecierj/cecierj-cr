@@ -112,3 +112,68 @@ UNIQUE (codigo) em disciplinas
 
 -- Inscrição única por combinação
 UNIQUE (candidato_id, edital_id, disciplina_id)
+2. Chaves Estrangeiras (FK)
+sql
+inscricoes.candidato_id → candidatos.id
+inscricoes.edital_id → editais.id
+inscricoes.disciplina_id → disciplinas.id
+disciplinas.curso_id → cursos.id
+3. Proteção contra Duplicatas
+✅ Constraint UNIQUE no banco
+
+✅ Verificação antes de inserir (script)
+
+✅ UPSERT (buscar antes de criar)
+
+✅ Remoção de duplicatas antigas
+
+📈 EVOLUÇÃO DA IMPORTAÇÃO
+Tentativa	Candidatos	Cursos	Disciplinas	Inscrições	Erros
+1ª	1	0	0	0	448
+2ª	186	12	86	129	57
+3ª	258	12	86	258	0
+4ª	186	12	86	129	0
+5ª	447	19	213	447	1
+🎓 LIÇÕES APRENDIDAS
+Encoding é importante
+
+CSV em português geralmente usa latin1
+
+Sempre tentar múltiplos encodings
+
+Datas precisam de conversão
+
+Supabase espera formato ISO (YYYY-MM-DD)
+
+CSV brasileiro usa DD/MM/YYYY
+
+RLS pode bloquear tudo
+
+Desabilitar para importação
+
+Ou criar políticas adequadas
+
+Constraint UNIQUE é essencial
+
+Impede duplicatas no banco
+
+Independente do script
+
+Verificar antes de inserir
+
+Buscar primeiro, inserir depois
+
+UPSERT é mais seguro que INSERT
+
+Tratar linhas inválidas
+
+Verificar NaN antes de processar
+
+Ignorar linhas de "Total"
+
+📁 ARQUIVOS CRIADOS
+Arquivo	Função
+supabase_client.py	Conexão com Supabase
+importar_definitivo.py	Script final de importação
+inscricoes_2026-2_CD.csv	Arquivo de dados
+.env	Credenciais do Supabase
