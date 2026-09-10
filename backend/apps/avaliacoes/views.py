@@ -1,49 +1,53 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from services.supabase_sync import SupabaseSync
+from services.avaliacao_service import AvaliacaoService
 
-@api_view(['GET'])
-def listar_avaliacoes(request):
-    """Lista todas as avaliações"""
+@api_view(['POST'])
+def lancar_avaliacao(request):
+    """Lançar notas AC e PP para uma inscrição"""
     try:
-        avaliacoes = SupabaseSync.get_all('avaliacoes')
+        inscricao_id = request.data.get('inscricao_id')
+        nota_ac = float(request.data.get('nota_ac', 0))
+        nota_pp = float(request.data.get('nota_pp', 0))
+        
+        if not inscricao_id:
+            return Response({
+                'status': 'error',
+                'message': 'inscricao_id é obrigatório'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        avaliacao = AvaliacaoService.criar_ou_atualizar(
+            inscricao_id, nota_ac, nota_pp
+        )
+        
+        if avaliacao:
+            return Response({
+                'status': 'success',
+                'data': avaliacao
+            })
+        
         return Response({
-            'status': 'success',
-            'data': avaliacoes,
-            'total': len(avaliacoes)
-        })
+            'status': 'error',
+            'message': 'Erro ao lançar avaliação'
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
     except Exception as e:
         return Response({
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-def criar_avaliacao(request):
-    """Cria uma nova avaliação"""
+@api_view(['GET'])
+def listar_avaliacoes_disciplina(request, disciplina_id):
+    """Lista avaliações de uma disciplina"""
     try:
-        dados = request.data
-        
-        # Calcular nota final se tiver AC e PP
-        if 'nota_ac' in dados and 'nota_pp' in dados:
-            peso_ac = 0.6
-            peso_pp = 0.4
-            dados['nota_final'] = (dados['nota_ac'] * peso_ac) + (dados['nota_pp'] * peso_pp)
-        
-        avaliacao = SupabaseSync.insert('avaliacoes', dados)
-        
-        if avaliacao:
-            return Response({
-                'status': 'success',
-                'data': avaliacao
-            }, status=status.HTTP_201_CREATED)
-        
+        avaliacoes = AvaliacaoService.listar_por_disciplina(disciplina_id)
         return Response({
-            'status': 'error',
-            'message': 'Erro ao criar avaliação'
-        }, status=status.HTTP_400_BAD_REQUEST)
-        
+            'status': 'success',
+            'data': avaliacoes,
+            'total': len(avaliacoes)
+        })
     except Exception as e:
         return Response({
             'status': 'error',
