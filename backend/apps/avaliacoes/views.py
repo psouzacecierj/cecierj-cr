@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from services.avaliacao_service import AvaliacaoService
 
+
 @api_view(['POST'])
 def lancar_avaliacao(request):
     """Lançar notas AC e PP para uma inscrição"""
@@ -38,6 +39,7 @@ def lancar_avaliacao(request):
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 def listar_avaliacoes_disciplina(request, disciplina_id):
     """Lista avaliações de uma disciplina"""
@@ -48,6 +50,44 @@ def listar_avaliacoes_disciplina(request, disciplina_id):
             'data': avaliacoes,
             'total': len(avaliacoes)
         })
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def classificar_disciplina(request, disciplina_id):
+    """Classifica os candidatos de uma disciplina"""
+    try:
+        resultados = AvaliacaoService.classificar_disciplina(disciplina_id)
+        return Response({
+            'status': 'success',
+            'data': resultados,
+            'total': len(resultados)
+        })
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def salvar_classificacao(request, disciplina_id):
+    """Salva a classificação no banco"""
+    try:
+        sucesso = AvaliacaoService.salvar_classificacao(disciplina_id)
+        if sucesso:
+            return Response({
+                'status': 'success',
+                'message': 'Classificação salva com sucesso'
+            })
+        return Response({
+            'status': 'error',
+            'message': 'Erro ao salvar classificação'
+        }, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         return Response({
             'status': 'error',
