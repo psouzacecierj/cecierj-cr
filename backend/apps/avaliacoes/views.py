@@ -93,3 +93,17 @@ def salvar_classificacao(request, disciplina_id):
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+def processar_todas_disciplinas(request):
+    """Processa todas as disciplinas que têm avaliações"""
+    try:
+        resultado = AvaliacaoService.processar_todas_disciplinas()
+        return Response({
+            'status': 'success',
+            'data': resultado
+        })
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)

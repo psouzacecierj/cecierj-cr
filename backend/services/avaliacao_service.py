@@ -157,3 +157,100 @@ class AvaliacaoService:
         except Exception as e:
             print(f"❌ Erro: {e}")
             return False
+    @classmethod
+    def processar_todas_disciplinas(cls) -> Dict:
+        """Processa todas as disciplinas que têm avaliações"""
+        try:
+            # Buscar todas as disciplinas que têm avaliações
+            response = supabase.table('avaliacoes')\
+                .select('inscricao_id')\
+                .execute()
+            
+            if not response.data:
+                return {
+                    'total_disciplinas': 0,
+                    'processadas': 0,
+                    'erros': 0,
+                    'detalhes': []
+                }
+            
+            # Buscar IDs únicos de disciplinas
+            inscricoes_ids = [a['inscricao_id'] for a in response.data]
+            
+            response = supabase.table('inscricoes')\
+                .select('disciplina_id')\
+                .in_('id', inscricoes_ids)\
+                .execute()
+            
+            if not response.data:
+                return {
+                    'total_disciplinas': 0,
+                    'processadas': 0,
+                    'erros': 0,
+                    'detalhes': []
+                }
+            
+            disciplinas_ids = list(set([i['disciplina_id'] for i in response.data]))
+            
+            # Processar cada disciplina
+            detalhes = []
+            processadas = 0
+            erros = 0
+            
+            for disciplina_id in disciplinas_ids:
+                try:
+                    # Buscar nome da disciplina
+                    disc = supabase.table('disciplinas')\
+                        .select('nome')\
+                        .eq('id', disciplina_id)\
+                        .execute()
+                    
+                    nome_disciplina = disc.data[0]['nome'] if disc.data else f'ID {disciplina_id}'
+                    
+                    # Classificar
+                    resultados = cls.classificar_disciplina(disciplina_id)
+                    
+                    if resultados:
+                        # Salvar classificação
+                        sucesso = cls.salvar_classificacao(disciplina_id)
+                        
+                        aprovados = sum(1 for r in resultados if r['status'] == 'APROVADO')
+                        reprovados = len(resultados) - aprovados
+                        
+                        detalhes.append({
+                            'disciplina_id': disciplina_id,
+                            'nome': nome_disciplina,
+                            'total': len(resultados),
+                            'aprovados': aprovados,
+                            'reprovados': reprovados,
+                            'salvo': sucesso
+                        })
+                        processadas += 1
+                    else:
+                        detalhes.append({
+                            'disciplina_id': disciplina_id,
+                            'nome': nome_disciplina,
+                            'total': 0,
+                            'mensagem': 'Sem avaliações'
+                        })
+                except Exception as e:
+                    erros += 1
+                    detalhes.append({
+                        'disciplina_id': disciplina_id,
+                        'erro': str(e)
+                    })
+            
+            return {
+                'total_disciplinas': len(disciplinas_ids),
+                'processadas': processadas,
+                'erros': erros,
+                'detalhes': detalhes
+            }
+        except Exception as e:
+            print(f"❌ Erro: {e}")
+            return {
+                'total_disciplinas': 0,
+                'processadas': 0,
+                'erros': 1,
+                'detalhes': [{'erro': str(e)}]
+            }
