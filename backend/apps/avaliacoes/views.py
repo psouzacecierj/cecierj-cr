@@ -2,7 +2,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from services.avaliacao_service import AvaliacaoService
+from services.resultado_service import ResultadoService
 
+
+# ============================================================
+# AVALIAÇÕES
+# ============================================================
 
 @api_view(['POST'])
 def lancar_avaliacao(request):
@@ -23,16 +28,12 @@ def lancar_avaliacao(request):
         )
         
         if avaliacao:
-            return Response({
-                'status': 'success',
-                'data': avaliacao
-            })
+            return Response({'status': 'success', 'data': avaliacao})
         
         return Response({
             'status': 'error',
             'message': 'Erro ao lançar avaliação'
         }, status=status.HTTP_400_BAD_REQUEST)
-        
     except Exception as e:
         return Response({
             'status': 'error',
@@ -93,15 +94,59 @@ def salvar_classificacao(request, disciplina_id):
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['POST'])
 def processar_todas_disciplinas(request):
     """Processa todas as disciplinas que têm avaliações"""
     try:
         resultado = AvaliacaoService.processar_todas_disciplinas()
+        return Response({'status': 'success', 'data': resultado})
+    except Exception as e:
         return Response({
-            'status': 'success',
-            'data': resultado
-        })
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================
+# RESULTADOS
+# ============================================================
+
+@api_view(['GET'])
+def resultado_grupo(request, grupo_id):
+    """Gera o resultado de um grupo/função"""
+    funcao = request.GET.get('funcao', 'Coordenador de Disciplina')
+    try:
+        resultado = ResultadoService.gerar_resultado_grupo(grupo_id, funcao)
+        return Response({'status': 'success', 'data': resultado})
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def resultado_geral(request):
+    """Gera o resultado consolidado de todos os grupos"""
+    try:
+        resultado = ResultadoService.gerar_resultado_geral()
+        return Response({'status': 'success', 'data': resultado})
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def recalcular_classificacao(request, grupo_id):
+    """Recalcula a classificação de um grupo/função"""
+    funcao = request.data.get('funcao', 'Coordenador de Disciplina')
+    try:
+        resultado = ResultadoService.recalcular_classificacao_grupo(grupo_id, funcao)
+        return Response({'status': 'success', 'data': resultado})
     except Exception as e:
         return Response({
             'status': 'error',

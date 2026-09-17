@@ -254,3 +254,32 @@ class AvaliacaoService:
                 'erros': 1,
                 'detalhes': [{'erro': str(e)}]
             }
+@classmethod
+def classificar_por_grupo(cls, grupo_id: int, funcao: str) -> List[Dict]:
+    """Classifica os candidatos de um grupo/função"""
+    try:
+        # Buscar todas as avaliações do grupo/função
+        response = supabase.table('avaliacoes')\
+            .select('*')\
+            .eq('grupo_id', grupo_id)\
+            .eq('funcao', funcao)\
+            .execute()
+        
+        if not response.data:
+            return []
+        
+        # Ordenar por nota final (decrescente)
+        avaliacoes = sorted(response.data, key=lambda x: x['nota_final'] or 0, reverse=True)
+        
+        # Atualizar classificação no banco
+        for i, aval in enumerate(avaliacoes, 1):
+            supabase.table('avaliacoes')\
+                .update({'classificacao': i})\
+                .eq('id', aval['id'])\
+                .execute()
+            aval['classificacao'] = i
+        
+        return avaliacoes
+    except Exception as e:
+        print(f"❌ Erro: {e}")
+        return []        
