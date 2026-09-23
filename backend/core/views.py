@@ -25,3 +25,7 @@ def home(request):
             },
             'docs': 'Acesse /admin/ para o painel administrativo'
         })
+  
+def convocacoes(request):
+    """Página de convocações"""
+    return render(request, 'convocacoes.html')

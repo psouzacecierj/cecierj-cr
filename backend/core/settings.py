@@ -1,3 +1,4 @@
+# settings.py
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -117,6 +118,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
+    "http://127.0.0.1:8000",  # ← ADICIONADO (para o frontend servido pelo Django)
 ]
 
 REST_FRAMEWORK = {
