@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convocações - CECIERJ</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/convocacoes.css' %}">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-logo">C</div>
+        <div class="header-texto">
+            <h1>Sistema de Automação do Processo Seletivo</h1>
+            <p>Fundação CECIERJ - Consórcio CEDERJ</p>
+        </div>
+    </header>
+    
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="/">📋 Candidatos</a>
+        <a href="/convocacoes/" class="active">🎯 Convocações</a>
+        <a href="#">📊 Dashboard</a>
+        <a href="#">⚙️ Configurações</a>
+    </nav>
+    
+    <!-- CONTAINER -->
+    <div class="container">
+        <!-- Mensagens -->
+        <div id="mensagem" class="mensagem"></div>
+        
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Carregando...</p>
+        </div>
+        
+        <!-- Conteúdo -->
+        <div id="conteudo" style="display: none;">
+            <!-- Filtros -->
+            <div class="card">
+                <div class="card-titulo">🔍 Filtros</div>
+                <div class="filtros-container">
+                    <div class="form-group">
+                        <label for="filtro-edital">Edital</label>
+                        <select id="filtro-edital" class="form-control">
+                            <option value="1">2026.2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-grupo">Grupo</label>
+                        <select id="filtro-grupo" class="form-control" onchange="onGrupoChange()">
+                            <option value="">Selecione um grupo...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtro-funcao">Função</label>
+                        <select id="filtro-funcao" class="form-control" onchange="onFuncaoChange()">
+                            <option value="Coordenador de Disciplina">Coordenador de Disciplina</option>
+                            <option value="Coordenador de Tutoria">Coordenador de Tutoria</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- KPIs -->
+            <div class="kpis-container">
+                <div class="kpi-card total">
+                    <div class="kpi-valor" id="kpi-total">0</div>
+                    <div class="kpi-label">📝 Total</div>
+                </div>
+                <div class="kpi-card convocados">
+                    <div class="kpi-valor" id="kpi-convocados">0</div>
+                    <div class="kpi-label">✅ Convocados</div>
+                </div>
+                <div class="kpi-card aguardando">
+                    <div class="kpi-valor" id="kpi-aguardando">0</div>
+                    <div class="kpi-label">⏳ Aguardando</div>
+                </div>
+                <div class="kpi-card expirados">
+                    <div class="kpi-valor" id="kpi-expirados">0</div>
+                    <div class="kpi-label">⚠️ Expirados</div>
+                </div>
+                <div class="kpi-card recusou">
+                    <div class="kpi-valor" id="kpi-recusou">0</div>
+                    <div class="kpi-label">❌ Recusou</div>
+                </div>
+            </div>
+            
+            <!-- Aviso de Próxima Convocação -->
+            <div id="aviso-proxima" class="aviso-proxima" style="display: none;"></div>
+            
+            <!-- Cadastro de Reserva - CG -->
+            <div class="card">
+                <div class="card-titulo">
+                    📋 Cadastro de Reserva - Ampla Concorrência (CG)
+                </div>
+                <table class="tabela tabela-cr">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Candidato</th>
+                            <th>CPF</th>
+                            <th>Nota</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-cg">
+                        <tr>
+                            <td colspan="7" class="text-center">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Cadastro de Reserva - RV -->
+            <div class="card">
+                <div class="card-titulo">
+                    🎯 Cadastro de Reserva - Reserva de Vaga (RV)
+                </div>
+                <table class="tabela tabela-cr">
+                    <thead>
+                        <tr>
+                            <th>Posição</th>
+                            <th>Candidato</th>
+                            <th>CPF</th>
+                            <th>Nota</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-rv">
+                        <tr>
+                            <td colspan="7" class="text-center">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Ações -->
+            <div class="acoes-container">
+                <button class="btn btn-secundario" onclick="recalcularClassificacao()">
+                    🔄 Recálcular Classificação
+                </button>
+                <button class="btn btn-secundario" onclick="carregarCR()">
+                    🔄 Atualizar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Convocação -->
+    <div id="modal-convocar" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-titulo">🎯 Convocar Candidato</div>
+            <p style="margin-bottom: 20px; color: #6B7280;">
+                Candidato: <strong id="modal-candidato-nome"></strong>
+            </p>
+            <div class="form-group">
+                <label for="modal-data-convocacao">Data de Convocação *</label>
+                <input 
+                    type="text" 
+                    id="modal-data-convocacao" 
+                    class="form-control" 
+                    placeholder="Ex: julho de 2025"
+                >
+            </div>
+            <div class="form-group">
+                <label for="modal-observacoes">Observações</label>
+                <textarea 
+                    id="modal-observacoes" 
+                    class="form-control" 
+                    rows="3"
+                    placeholder="Observações opcionais..."
+                ></textarea>
+            </div>
+            <div class="modal-acoes">
+                <button class="btn btn-secundario" onclick="fecharModalConvocar()">
+                    Cancelar
+                </button>
+                <button class="btn btn-primario" onclick="confirmarConvocacao()">
+                    ✅ Confirmar Convocação
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="{% static 'js/api.js' %}"></script>
+    <script src="{% static 'js/convocacoes.js' %}"></script>
+</body>
+</html>

@@ -8,4 +8,5 @@ urlpatterns = [
     path('cr/recusar/<int:avaliacao_id>/', views.registrar_recusa, name='registrar_recusa'),
     path('cr/atualizar/<int:avaliacao_id>/', views.atualizar_status, name='atualizar_status'),
     path('cr/kpis/', views.kpis, name='kpis'),
+    path('cr/avisos-validade/', views.avisos_validade, name='avisos_validade'),  
 ]

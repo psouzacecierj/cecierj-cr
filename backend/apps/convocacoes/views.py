@@ -80,3 +80,28 @@ def kpis(request):
         return Response({'status': 'success', 'data': resultado})
     except Exception as e:
         return Response({'status': 'error', 'message': str(e)}, status=400)
+
+@api_view(['GET'])
+def avisos_validade(request):
+    """
+    Lista avisos de validade dos editais.
+    
+    Retorna todos os editais ativos com:
+    - Prazo de convocação
+    - Validade da bolsa
+    - Dias/meses restantes
+    - Nível de alerta (ok, atencao, alerta, critico, expirado)
+    - Cor sugerida (verde, amarelo, laranja, vermelho, preto)
+    - Mensagem descritiva
+    """
+    try:
+        resultado = ConvocacaoService.listar_avisos_validade()
+        return Response({
+            'status': 'success',
+            'data': resultado
+        })
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)

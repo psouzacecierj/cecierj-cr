@@ -337,3 +337,105 @@ class ConvocacaoService:
                 'expirados': 0,
                 'recusou': 0
             }
+    @classmethod
+    def listar_avisos_validade(cls) -> Dict:
+        """
+        Lista todos os editais com seus prazos de validade e avisos.
+        
+        Retorna:
+        - Editais ativos
+        - Dias restantes
+        - Nível de alerta (ok, atencao, alerta, critico, expirado)
+        
+        Regra de alerta:
+        - > 12 meses: 🟢 OK (verde)
+        - 3 a 12 meses: 🟡 ATENÇÃO (amarelo)
+        - 1 a 3 meses: 🟠 ALERTA (laranja)
+        - 0 a 1 mês: 🔴 CRÍTICO (vermelho)
+        - < 0 dias: ❌ EXPIRADO (preto)
+        """
+        from datetime import date, datetime
+        
+        try:
+            # Buscar todos os editais ativos
+            response = supabase.table('editais')\
+                .select('*')\
+                .eq('ativo', True)\
+                .execute()
+            
+            if not response.data:
+                return {'total': 0, 'editais': []}
+            
+            hoje = date.today()
+            editais = []
+            
+            for edital in response.data:
+                prazo = edital.get('prazo_convocacao')
+                validade_bolsa = edital.get('validade_pagamento_bolsa')
+                
+                # Calcular dias/meses restantes
+                if prazo:
+                    try:
+                        prazo_date = datetime.strptime(str(prazo), '%Y-%m-%d').date()
+                        dias_restantes = (prazo_date - hoje).days
+                        meses_restantes = dias_restantes // 30
+                    except Exception:
+                        dias_restantes = None
+                        meses_restantes = None
+                else:
+                    dias_restantes = None
+                    meses_restantes = None
+                
+                # Definir nível de alerta
+                if dias_restantes is None:
+                    nivel = 'sem_prazo'
+                    cor = 'cinza'
+                    mensagem = 'Sem prazo definido'
+                elif dias_restantes < 0:
+                    nivel = 'expirado'
+                    cor = 'preto'
+                    mensagem = f'Edital expirado há {abs(dias_restantes)} dias'
+                elif dias_restantes <= 30:
+                    nivel = 'critico'
+                    cor = 'vermelho'
+                    mensagem = f'⚠️ URGENTE: expira em {dias_restantes} dias'
+                elif meses_restantes <= 3:
+                    nivel = 'alerta'
+                    cor = 'laranja'
+                    mensagem = f'⚠️ Atenção: expira em {meses_restantes} meses'
+                elif meses_restantes <= 12:
+                    nivel = 'atencao'
+                    cor = 'amarelo'
+                    mensagem = f'Atenção: expira em {meses_restantes} meses'
+                else:
+                    nivel = 'ok'
+                    cor = 'verde'
+                    mensagem = f'OK: expira em {meses_restantes} meses'
+                
+                editais.append({
+                    'id': edital['id'],
+                    'numero': edital.get('numero'),
+                    'semestre': edital.get('semestre'),
+                    'prazo_convocacao': str(prazo) if prazo else None,
+                    'validade_pagamento_bolsa': str(validade_bolsa) if validade_bolsa else None,
+                    'dias_restantes': dias_restantes,
+                    'meses_restantes': meses_restantes,
+                    'nivel': nivel,
+                    'cor': cor,
+                    'mensagem': mensagem
+                })
+            
+            # Ordenar por dias restantes (mais crítico primeiro)
+            editais.sort(
+                key=lambda x: x['dias_restantes'] 
+                if x['dias_restantes'] is not None 
+                else 99999
+            )
+            
+            return {
+                'total': len(editais),
+                'editais': editais
+            }
+        except Exception as e:
+            print(f"❌ Erro em listar_avisos_validade: {e}")
+            return {'total': 0, 'editais': []}
