@@ -1,6 +1,127 @@
 .kpis-container {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 24px;
+    align-items: stretch;
 }
+
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 12px;
+    background: var(--fundo-branco);
+    border-radius: var(--borda-raio);
+    box-shadow: var(--sombra-suave);
+    border: 1px solid var(--borda-cor);
+    text-align: center;
+    min-width: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-media);
+}
+
+.kpi-valor {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    color: var(--cecierj-azul-petroleo);
+    /* Garante que números grandes não "empurrem" o label */
+    display: block;
+    word-break: keep-all;
+}
+
+.kpi-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--texto-secundario);
+    line-height: 1.2;
+    /* Evita quebra de linha indesejada no label */
+    white-space: nowrap;
+}
+/* ============================================================
+   BANNER DE AVISO DE VALIDADE DO EDITAL
+   ============================================================ */
+.banner-aviso {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: var(--borda-raio);
+    margin-bottom: 20px;
+    box-shadow: var(--sombra-suave);
+    border-left: 5px solid var(--texto-claro);
+    background: var(--fundo-branco);
+    transition: all 0.2s;
+}
+
+.banner-aviso .banner-icone {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.banner-aviso .banner-texto {
+    flex: 1;
+}
+
+.banner-aviso .banner-titulo {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--texto-principal);
+    margin-bottom: 2px;
+}
+
+.banner-aviso .banner-mensagem {
+    font-size: 13px;
+    color: var(--texto-secundario);
+}
+
+.banner-aviso .btn-pequeno {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+/* Variantes por cor */
+
+.banner-aviso.banner-verde {
+    background: #ECFDF5;
+    border-left-color: var(--verde-sucesso);
+}
+.banner-aviso.banner-verde .banner-mensagem { color: #065F46; }
+
+.banner-aviso.banner-amarelo {
+    background: #FFFBEB;
+    border-left-color: #F59E0B;
+}
+.banner-aviso.banner-amarelo .banner-mensagem { color: #92400E; }
+
+.banner-aviso.banner-laranja {
+    background: #FFF7ED;
+    border-left-color: #EA580C;
+}
+.banner-aviso.banner-laranja .banner-mensagem { color: #9A3412; }
+
+.banner-aviso.banner-vermelho {
+    background: #FEF2F2;
+    border-left-color: var(--vermelho-erro);
+}
+.banner-aviso.banner-vermelho .banner-mensagem { color: #991B1B; }
+
+.banner-aviso.banner-preto {
+    background: #F3F4F6;
+    border-left-color: #111827;
+}
+.banner-aviso.banner-preto .banner-mensagem { color: #111827; font-weight: 500; }
+
+.banner-aviso.banner-cinza {
+    background: #F9FAFB;
+    border-left-color: #D1D5DB;
+}
+.banner-aviso.banner-cinza .banner-mensagem { color: var(--texto-claro); }

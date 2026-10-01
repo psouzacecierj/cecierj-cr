@@ -123,6 +123,26 @@ async function apiRecalcularClassificacao(grupoId, funcao) {
 }
 
 // ============================================================
+// AVISOS DE VALIDADE
+// ============================================================
+
+/**
+ * Lista avisos de validade de todos os editais ativos
+ */
+async function apiListarAvisosValidade() {
+    return chamarAPI('/convocacoes/cr/avisos-validade/');
+}
+
+/**
+ * Atualiza os prazos de um edital
+ */
+async function apiAtualizarPrazosEdital(editalId, dados) {
+    return chamarAPI(`/convocacoes/editais/${editalId}/prazos/`, {
+        method: 'POST',
+        body: JSON.stringify(dados),
+    });
+}
+// ============================================================
 // GRUPOS
 // ============================================================
 
@@ -130,7 +150,10 @@ async function apiRecalcularClassificacao(grupoId, funcao) {
  * Lista grupos de um curso
  * (Endpoint ainda precisa ser criado)
  */
-async function apiListarGrupos(cursoId = null) {
-    const params = cursoId ? `?curso_id=${cursoId}` : '';
-    return chamarAPI(`/grupos/${params}`);
+async function apiListarGrupos(opcoes = {}) {
+    const params = new URLSearchParams();
+    if (opcoes.editalId) params.append('edital_id', opcoes.editalId);
+    if (opcoes.cursoId) params.append('curso_id', opcoes.cursoId);
+    const qs = params.toString() ? `?${params}` : '';
+    return chamarAPI(`/convocacoes/grupos/${qs}`);
 }

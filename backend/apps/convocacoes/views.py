@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-
 from services.convocacao_service import ConvocacaoService
+from services.grupo_service import GrupoService
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -156,4 +156,36 @@ def atualizar_prazos_edital(request, edital_id):
         return Response(
             {"status": "error", "message": f"Erro interno: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+# ═══════════════════════════════════════════════════════════════
+# Grupos
+# ═══════════════════════════════════════════════════════════════
+
+@api_view(['GET'])
+def listar_grupos(request):
+    """
+    Lista grupos, opcionalmente filtrando por edital_id e/ou curso_id.
+    
+    Query params:
+        ?edital_id=1
+        ?curso_id=1
+    """
+    try:
+        edital_id = request.GET.get('edital_id')
+        curso_id = request.GET.get('curso_id')
+
+        grupos = GrupoService.listar_grupos(
+            edital_id=int(edital_id) if edital_id else None,
+            curso_id=int(curso_id) if curso_id else None,
+        )
+
+        return Response({
+            'status': 'success',
+            'data': grupos,
+            'total': len(grupos)
+        })
+    except Exception as e:
+        return Response(
+            {'status': 'error', 'message': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
         )

@@ -9,6 +9,8 @@ const estado = {
     funcaoSelecionada: 'Coordenador de Disciplina',
     cr: null,
     proxima: null,
+    avisos: null,              // ⬅️ NOVO
+    editalAtualId: 1,          // ⬅️ NOVO (para vincular ao banner)
     kpis: null,
     carregando: false,
 };
@@ -19,6 +21,7 @@ const estado = {
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('📋 Iniciando tela de convocações...');
+    await carregarAvisosValidade();   // ⬅️ NOVO
     await carregarGrupos();
 });
 
@@ -28,23 +31,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function carregarGrupos() {
     try {
-        // Por enquanto, grupos mockados
-        // TODO: Criar endpoint /api/grupos/
-        estado.grupos = [
-            { id: 1, nome: 'Sociologia da Educação', curso: '2026.2 Licenciatura em Pedagogia' },
-            { id: 2, nome: 'Estágio em Gestão', curso: '2026.2 Licenciatura em Pedagogia' },
-        ];
+        console.log('🔍 Buscando grupos...');
+        const response = await apiListarGrupos({ editalId: estado.editalAtualId });
+        estado.grupos = response.data || [];
+        console.log('✅ Grupos carregados:', estado.grupos);
         
         preencherSelectGrupos();
         
-        // Selecionar o primeiro grupo automaticamente
         if (estado.grupos.length > 0) {
             estado.grupoSelecionado = estado.grupos[0].id;
             document.getElementById('filtro-grupo').value = estado.grupoSelecionado;
             await carregarCR();
         }
     } catch (error) {
-        console.error('Erro ao carregar grupos:', error);
+        console.error('❌ Erro ao carregar grupos:', error);
         mostrarMensagem('erro', 'Erro ao carregar grupos');
     }
 }
@@ -56,7 +56,12 @@ function preencherSelectGrupos() {
     estado.grupos.forEach(grupo => {
         const option = document.createElement('option');
         option.value = grupo.id;
-        option.textContent = `${grupo.nome} (${grupo.curso})`;
+        
+        // Formato: "1 - Sociologia da Educação (Pedagogia)"
+        const numero = grupo.numero ? `${grupo.numero} - ` : '';
+        const nomeCurso = grupo.curso?.nome || 'Curso';
+        option.textContent = `${numero}${grupo.nome} (${nomeCurso})`;
+        
         select.appendChild(option);
     });
 }
@@ -388,5 +393,127 @@ function onFuncaoChange() {
     
     if (estado.grupoSelecionado) {
         carregarCR();
+    }
+}
+// ============================================================
+// AVISOS DE VALIDADE DO EDITAL
+// ============================================================
+
+async function carregarAvisosValidade() {
+    try {
+        console.log('🔍 Buscando avisos de validade...');
+        const response = await apiListarAvisosValidade();
+        estado.avisos = response.data;
+        console.log('✅ Avisos carregados:', estado.avisos);
+        renderizarBannerAviso();
+    } catch (error) {
+        console.error('❌ Erro ao carregar avisos:', error);
+        // Não mostra erro pro usuário — é um recurso secundário
+    }
+}
+
+function renderizarBannerAviso() {
+    const banner = document.getElementById('banner-aviso-validade');
+    if (!banner) return;
+
+    // Sem avisos → esconde
+    if (!estado.avisos || !estado.avisos.editais || estado.avisos.editais.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    // Filtra o edital atual (o primeiro/principal)
+    const edital = estado.avisos.editais.find(e => e.id === estado.editalAtualId)
+                 || estado.avisos.editais[0];
+
+    // Mapeia ícones por nível
+    const icones = {
+        ok: '✅',
+        atencao: '🟡',
+        alerta: '🟠',
+        critico: '🔴',
+        expirado: '❌',
+        sem_prazo: '⚪',
+    };
+
+    const icone = icones[edital.nivel] || '⚪';
+
+    banner.style.display = 'flex';
+    banner.className = `banner-aviso banner-${edital.cor}`;
+
+    banner.innerHTML = `
+        <span class="banner-icone">${icone}</span>
+        <div class="banner-texto">
+            <div class="banner-titulo">
+                Edital ${edital.numero} · ${edital.semestre}
+            </div>
+            <div class="banner-mensagem">${edital.mensagem}</div>
+        </div>
+        <button class="btn btn-secundario btn-pequeno" onclick="abrirModalPrazos()">
+            ⚙️ Editar Prazos
+        </button>
+    `;
+}
+
+// ============================================================
+// MODAL DE PRAZOS
+// ============================================================
+
+let editalPrazosId = null;
+
+function abrirModalPrazos() {
+    // Pega o edital atual do banner
+    const edital = estado.avisos?.editais?.find(e => e.id === estado.editalAtualId)
+                 || estado.avisos?.editais?.[0];
+
+    if (!edital) {
+        mostrarMensagem('erro', 'Nenhum edital disponível para editar');
+        return;
+    }
+
+    editalPrazosId = edital.id;
+
+    document.getElementById('modal-prazos-edital').textContent =
+        `${edital.numero} · ${edital.semestre}`;
+
+    // Preenche inputs (formato YYYY-MM-DD)
+    document.getElementById('modal-prazo-convocacao').value =
+        edital.prazo_convocacao || '';
+    document.getElementById('modal-validade-bolsa').value =
+        edital.validade_pagamento_bolsa || '';
+
+    document.getElementById('modal-prazos').style.display = 'flex';
+}
+
+function fecharModalPrazos() {
+    const modal = document.getElementById('modal-prazos');
+    if (modal) modal.style.display = 'none';
+    editalPrazosId = null;
+}
+
+async function salvarPrazos() {
+    const prazoConvocacao = document.getElementById('modal-prazo-convocacao').value || null;
+    const validadeBolsa = document.getElementById('modal-validade-bolsa').value || null;
+
+    // Validação básica
+    if (prazoConvocacao && validadeBolsa && prazoConvocacao > validadeBolsa) {
+        mostrarMensagem('erro', 'O prazo de convocação não pode ser depois da validade da bolsa');
+        return;
+    }
+
+    try {
+        await apiAtualizarPrazosEdital(editalPrazosId, {
+            prazo_convocacao: prazoConvocacao,
+            validade_pagamento_bolsa: validadeBolsa,
+        });
+
+        mostrarMensagem('sucesso', 'Prazos atualizados com sucesso!');
+        fecharModalPrazos();
+
+        // Recarrega os avisos para atualizar o banner
+        await carregarAvisosValidade();
+    } catch (error) {
+        console.error('❌ Erro ao salvar prazos:', error);
+        mostrarMensagem('erro', `Erro ao salvar prazos: ${error.message}`);
     }
 }

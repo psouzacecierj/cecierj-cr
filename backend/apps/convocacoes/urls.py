@@ -9,5 +9,6 @@ urlpatterns = [
     path('cr/atualizar/<int:avaliacao_id>/', views.atualizar_status, name='atualizar_status'),
     path('cr/kpis/', views.kpis, name='kpis'),
     path('cr/avisos-validade/', views.avisos_validade, name='avisos_validade'), 
-        path('editais/<int:edital_id>/prazos/', views.atualizar_prazos_edital, name='atualizar_prazos_edital'), 
+    path('editais/<int:edital_id>/prazos/', views.atualizar_prazos_edital, name='atualizar_prazos_edital'), 
+    path('grupos/', views.listar_grupos, name='listar_grupos'),
 ]
